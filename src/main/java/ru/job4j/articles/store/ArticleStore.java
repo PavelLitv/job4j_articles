@@ -92,6 +92,35 @@ public class ArticleStore implements Store<Article>, AutoCloseable {
     }
 
     @Override
+    public void saveAll(List<Article> articles) {
+        LOGGER.info("Сохранение {} статей", articles.size());
+        var sql = "insert into articles(text) values(?)";
+        try (var statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            connection.setAutoCommit(false);
+            for (var article : articles) {
+                statement.setString(1, article.getText());
+                statement.addBatch();
+            }
+            statement.executeBatch();
+            var keys = statement.getGeneratedKeys();
+            int i = 0;
+            while (keys.next()) {
+                articles.get(i++).setId(keys.getInt(1));
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            LOGGER.error("Ошибка при вставке batch: {}", e.getMessage());
+            throw new IllegalStateException();
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                LOGGER.error("Ошибка при возврате autoCommit: {}", e.getMessage());
+            }
+        }
+    }
+
+    @Override
     public void close() throws Exception {
         if (connection != null) {
             connection.close();

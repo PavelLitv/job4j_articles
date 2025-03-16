@@ -104,10 +104,14 @@ public class WordStore implements Store<Word>, AutoCloseable {
     }
 
     @Override
+    public void saveAll(List<Word> models) {
+        System.out.println("Метод не реализован");
+    }
+
+    @Override
     public void close() throws Exception {
         if (connection != null) {
             connection.close();
         }
     }
-
 }
